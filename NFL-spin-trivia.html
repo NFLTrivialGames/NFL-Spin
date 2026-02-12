@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>NFL Skill Player Trivia</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0b1c2d, #122f4a);
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: #1e3a5f;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+h1 {
+    margin-top: 0;
+}
+
+#wheel {
+    margin: 20px auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 6px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0b1c2d;
+    transition: transform 2s ease-out;
+    font-weight: bold;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.spin-btn { background: #28a745; color: white; }
+.submit-btn { background: #007bff; color: white; }
+
+input {
+    padding: 8px;
+    font-size: 16px;
+    width: 70%;
+}
+
+#result {
+    font-size: 22px;
+    margin-top: 10px;
+}
+
+#answers {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+#score {
+    margin-top: 10px;
+    font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>NFL Skill Player Trivia</h1>
+
+<input type="file" id="csvFile" accept=".csv">
+<p style="font-size:12px;">Upload your CSV file (2000–present data)</p>
+
+<div id="wheel">Spin</div>
+
+<button class="spin-btn" onclick="spin()">Spin</button>
+
+<div id="question"></div>
+
+<br>
+
+<input type="text" id="guess" placeholder="Enter player name">
+<button class="submit-btn" onclick="checkAnswer()">Submit</button>
+
+<div id="result"></div>
+<div id="answers"></div>
+<div id="score">Score: 0</div>
+
+</div>
+
+<script>
+
+let players = [];
+let validAnswers = [];
+let score = 0;
+
+document.getElementById('csvFile').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const rows = text.split('\n').slice(1);
+
+        players = rows.map(row => {
+            const cols = row.split(',');
+            return {
+                name: cols[0]?.trim(),
+                team: cols[1]?.trim(),
+                position: cols[2]?.trim(),
+                year: parseInt(cols[3])
+            };
+        }).filter(p => p.name && p.team && p.position && p.year);
+
+        alert("CSV Loaded! Players: " + players.length);
+    };
+
+    reader.readAsText(file);
+});
+
+function spin() {
+
+    if (players.length === 0) {
+        alert("Upload CSV first!");
+        return;
+    }
+
+    const wheel = document.getElementById("wheel");
+    wheel.style.transform = "rotate(" + (Math.random() * 720 + 720) + "deg)";
+
+    const teams = [...new Set(players.map(p => p.team))];
+    const positions = ["QB","RB","WR","TE","K"];
+    const years = [...new Set(players.map(p => p.year))];
+
+    const randomTeam = teams[Math.floor(Math.random()*teams.length)];
+    const randomPosition = positions[Math.floor(Math.random()*positions.length)];
+    const randomYear = years[Math.floor(Math.random()*years.length)];
+
+    validAnswers = players.filter(p =>
+        p.team === randomTeam &&
+        p.position === randomPosition &&
+        p.year === randomYear
+    );
+
+    document.getElementById("question").innerHTML =
+        `<h2>Name a ${randomPosition} from the ${randomTeam} in ${randomYear}</h2>`;
+
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("answers").innerHTML = "";
+    document.getElementById("guess").value = "";
+}
+
+function checkAnswer() {
+
+    const guess = document.getElementById("guess").value.trim().toLowerCase();
+    if (!guess) return;
+
+    const correct = validAnswers.some(p =>
+        p.name.toLowerCase() === guess
+    );
+
+    if (correct) {
+        document.getElementById("result").innerHTML = "✅ Correct!";
+        score++;
+    } else {
+        document.getElementById("result").innerHTML = "❌ Wrong!";
+    }
+
+    document.getElementById("score").innerHTML = "Score: " + score;
+
+    if (validAnswers.length > 0) {
+        document.getElementById("answers").innerHTML =
+            "<strong>Possible Answers:</strong><br>" +
+            validAnswers.map(p => p.name).join("<br>");
+    } else {
+        document.getElementById("answers").innerHTML =
+            "No players found for this combo.";
+    }
+}
+
+</script>
+
+</body>
+</html>
